@@ -2,7 +2,7 @@ import requests
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=DIS&apikey=E8XRSI3QLSVWSVHZ'
+url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=DIS&apikey=MYAPIKEY'
 r = requests.get(url)
 dis_data = r.json()
 
