@@ -9,7 +9,7 @@ s_and_p_dicts = []
 for symbol in s_and_p_500[:5]:
     print(symbol)
 
-    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={symbol}&apikey=E8XRSI3QLSVWSVHZ'
+    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={symbol}&apikey=MYAPIKEY'
     r = requests.get(url)
     data = r.json()
     s_and_p_dicts.append(data)
@@ -29,7 +29,7 @@ for s_and_p_dict in s_and_p_dicts:
     symbol = s_and_p_dict['Meta Data']['2. Symbol']
 
     for date in dicts:
-        date = date
+        dates = date
         opens = float(dicts[date]['1. open'])
         highs = float(dicts[date]['2. high'])
         lows = float(dicts[date]['3. low'])
@@ -45,7 +45,7 @@ for s_and_p_dict in s_and_p_dicts:
         cursor.execute('''
                        INSERT INTO finance.dbo.s_and_p_daily (stock_value_id,
                                                               symbol,
-                                                              date_data,
+                                                              data_date,
                                                               open_price,
                                                               high_price,
                                                               low_price,
@@ -55,7 +55,18 @@ for s_and_p_dict in s_and_p_dicts:
                                                               dividend,
                                                               split
                    )
-                   VALUES
-                   (stock_value_id, symbol, date_data, open_price, high_price, low_price, close_price, adjusted_close, volume, dividend, split)
-                   ''')
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                   ''',
+                   stock_value_id,
+                   symbol,
+                   dates,
+                   opens,
+                   highs,
+                   lows,
+                   closes,
+                   adj_closes,
+                   volumes,
+                   divs,
+                   split
+                   )
         conn.commit()
