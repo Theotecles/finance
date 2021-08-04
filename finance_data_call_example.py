@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 url = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=DIS&apikey=MYAPIKEY'
 r = requests.get(url)
+print(f"Status code: {r.status_code}")
 dis_data = r.json()
 
 # CREATE A DICTIONARY FOR THE FINANCE DATA
@@ -17,20 +18,15 @@ for date in dis_dicts:
     highs.append(float(dis_dicts[date]['2. high']))
     lows.append(float(dis_dicts[date]['3. low']))
 
-# DEFINE REVERESE
-def reverse(lst):
-    """reverese the elements in a list"""
-    return [ele for ele in reversed(lst)]
-
 # PLOT THE HIGHS AND LOWS
 plt.style.use('seaborn')
 fig, ax = plt.subplots()
-ax.plot(dis_dates, reverse(highs), c='red', alpha=0.6)
-ax.plot(dis_dates, reverse(lows), c='blue', alpha=0.6)
-ax.fill_between(dis_dates, reverse(highs), reverse(lows), facecolor='blue', alpha=0.15)
+ax.plot(dis_dates, highs, c='red', alpha=0.6)
+ax.plot(dis_dates, lows, c='blue', alpha=0.6)
+ax.fill_between(dis_dates, highs, lows, facecolor='blue', alpha=0.15)
 
 # FORMAT PLOT
-ax.set_title(f"Daily high and low stock prices - Last 100 Days \nWalt Disney Company ({symbol})", fontsize=24)
+ax.set_title(f"Daily high and low stock prices - Last 100 Days \n({symbol})", fontsize=24)
 ax.set_xlabel('', fontsize=16)
 fig.autofmt_xdate()
 ax.set_ylabel("Price USD", fontsize=10)
