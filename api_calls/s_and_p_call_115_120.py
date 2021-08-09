@@ -6,7 +6,7 @@ import pyodbc
 # CREATE AN EMPTY LIST TO HOUSE THE JSONS
 s_and_p_dicts = []
 
-for symbol in s_and_p_500[110:115]:
+for symbol in s_and_p_500[115:120]:
     print(symbol)
 
     url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol={symbol}&outputsize=full&apikey=E8XRSI3QLSVWSVHZ'
