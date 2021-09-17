@@ -4,6 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
 import numpy as np
+import warnings
+from math import sqrt
+from sklearn.metrics import mean_squared_error
 
 # CONNECT TO DATABASE
 conn = pyodbc.connect('Driver={SQL Server};'
@@ -54,11 +57,53 @@ plt.show()
 dis_df = dis_df.drop(['symbol'], axis=1)
 dis_df['data_date'] = pd.to_datetime(dis_df['data_date'])
 dis_df.set_index('data_date', inplace=True)
+dis_df.index = pd.DatetimeIndex(dis_df.index).to_period('D')
+print(dis_df.index)
 print(dis_df.head())
 print(np.asarray(dis_df))
 # FIT THE MODEL
 model = ARIMA(dis_df, order=(1, 1, 1))
 model_fit = model.fit()
 
-# MAKE PREDICTIONS
-pred = model_fit.predict(len(dis_df), len(dis_df), typ='levels')
+
+# EVALUATE AN ARIMA MODEL FOR A GIVEN ORDER (P, D, Q)
+def evaluate_arima_model(X, arima_order):
+    # prepare training dataset
+    train_size = int(len(X) * 0.66)
+    train, test = X[0:train_size], X[train_size:]
+    history = [x for x in train]
+    # make predictions
+    predictions = list()
+    for t in range(len(test)):
+        model = ARIMA(history, order=arima_order)
+        model_fit = model.fit()
+        yhat = model_fit.forecast()[0]
+        predictions.append(yhat)
+        history.append(test[t])
+    # calculate out of sample error
+    rmse = sqrt(mean_squared_error(test, predictions))
+    return rmse
+
+# EVALUATE COMBINATIONS OF P, D AND Q VALUES FOR AN ARIMA MODEL
+def evaluate_models(dataset, p_values, d_values, q_values):
+    dataset = dataset.astype('float32')
+    best_score, best_cfg = float("inf"), None
+    for p in p_values:
+        for d in d_values:
+            for q in q_values:
+                order = (p,d,q)
+                try:
+                    rmse = evaluate_arima_model(dataset, order)
+                    if rmse < best_score:
+                        best_score, best_cfg = rmse, order
+                    print('ARIMA%s RMSE=%.3f' % (order,rmse))
+                except:
+                    continue
+    print('Best ARIMA%s RMSE=%.3f' % (best_cfg, best_score))
+
+# EVALUATE PARAMETERS
+p_values = [0, 1, 2, 4, 6, 8, 10]
+d_values = range(0, 3)
+q_values = range(0, 3)
+warnings.filterwarnings("ignore")
+evaluate_models(dis_df, p_values, d_values, q_values)
