@@ -24,7 +24,7 @@ query = '''
     FROM finance.dbo.s_and_p_daily
     WHERE symbol = 'DIS'
     AND data_date >= '2020-12-01'
-    ORDER BY data_date DESC
+    ORDER BY data_date ASC
     '''
 
 # PULL IN THE DATA USING PANDAS
@@ -37,6 +37,9 @@ for date in dis_df['data_date']:
     dis_dates.append(datetime.strptime(date, '%Y-%m-%d'))
 
 dis_df['data_date'] = dis_dates
+
+# CHECK DATA TYPES
+print(dis_df.dtypes)
 
 # PLOT THE DATA
 plt.style.use('seaborn')
@@ -60,11 +63,10 @@ dis_df.set_index('data_date', inplace=True)
 dis_df.index = pd.DatetimeIndex(dis_df.index).to_period('D')
 print(dis_df.index)
 print(dis_df.head())
-print(np.asarray(dis_df))
 # FIT THE MODEL
 model = ARIMA(dis_df, order=(1, 1, 1))
 model_fit = model.fit()
-
+print(model_fit.summary())
 
 # EVALUATE AN ARIMA MODEL FOR A GIVEN ORDER (P, D, Q)
 def evaluate_arima_model(X, arima_order):
@@ -83,6 +85,9 @@ def evaluate_arima_model(X, arima_order):
     # calculate out of sample error
     rmse = sqrt(mean_squared_error(test, predictions))
     return rmse
+
+test_rmse = evaluate_arima_model(dis_df, arima_order=(1, 1, 1))
+print(test_rmse)
 
 # EVALUATE COMBINATIONS OF P, D AND Q VALUES FOR AN ARIMA MODEL
 def evaluate_models(dataset, p_values, d_values, q_values):
