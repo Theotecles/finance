@@ -63,52 +63,54 @@ dis_df.set_index('data_date', inplace=True)
 dis_df.index = pd.DatetimeIndex(dis_df.index).to_period('D')
 print(dis_df.index)
 print(dis_df.head())
-# FIT THE MODEL
-model = ARIMA(dis_df, order=(1, 1, 1))
-model_fit = model.fit()
-print(model_fit.summary())
-
-# EVALUATE AN ARIMA MODEL FOR A GIVEN ORDER (P, D, Q)
-def evaluate_arima_model(X, arima_order):
-    # prepare training dataset
-    train_size = int(len(X) * 0.66)
-    train, test = X[0:train_size], X[train_size:]
-    history = [x for x in train]
-    # make predictions
-    predictions = list()
-    for t in range(len(test)):
-        model = ARIMA(history, order=arima_order)
-        model_fit = model.fit()
-        yhat = model_fit.forecast()[0]
-        predictions.append(yhat)
-        history.append(test[t])
-    # calculate out of sample error
-    rmse = sqrt(mean_squared_error(test, predictions))
-    return rmse
-
-test_rmse = evaluate_arima_model(dis_df, arima_order=(1, 1, 1))
-print(test_rmse)
 
 # EVALUATE COMBINATIONS OF P, D AND Q VALUES FOR AN ARIMA MODEL
 def evaluate_models(dataset, p_values, d_values, q_values):
-    dataset = dataset.astype('float32')
-    best_score, best_cfg = float("inf"), None
     for p in p_values:
         for d in d_values:
             for q in q_values:
-                order = (p,d,q)
-                try:
-                    rmse = evaluate_arima_model(dataset, order)
-                    if rmse < best_score:
-                        best_score, best_cfg = rmse, order
-                    print('ARIMA%s RMSE=%.3f' % (order,rmse))
-                except:
-                    continue
-    print('Best ARIMA%s RMSE=%.3f' % (best_cfg, best_score))
+                model = ARIMA(dataset, order=(p, d, q))
+                model_fit = model.fit()
+                print(model_fit.summary())
+
+# SPLIT THE DATA INTO TRAINING AND TEST SET
+total = len(dis_df)
+train_break = int(round(total * .75, 0))
+train = dis_df.iloc[:train_break,:]
+test = dis_df.iloc[train_break:,:]
+print(train.shape)
+print(test.shape)
 
 # EVALUATE PARAMETERS
 p_values = [0, 1, 2, 4, 6, 8, 10]
 d_values = range(0, 3)
 q_values = range(0, 3)
 warnings.filterwarnings("ignore")
-evaluate_models(dis_df, p_values, d_values, q_values)
+# evaluate_models(train, p_values, d_values, q_values)
+
+#1, 1, 0 HAS BEST AIC WITH 774.237
+# FIT THE MODEL
+model = ARIMA(dis_df, order=(1, 1, 0))
+model_fit = model.fit()
+print(model_fit.summary())
+
+# CREATE THE TEST PREDICTIONS
+predictions = model_fit.predict(len(test))
+print(predictions.head(5))
+print(predictions.tail(5))
+
+# PLOT THE DATA
+plt.style.use('seaborn')
+fig, ax = plt.subplots()
+ax.plot(dis_dates, dis_df['adjusted_close'], c='red', alpha=0.6)
+ax.plot(dis_dates[50:], predictions, c='blue', alpha=0.6)
+
+# FORMAT PLOT
+ax.set_title(f"Daily Adjusted Close Data \n(DIS)", fontsize=24)
+ax.set_xlabel('', fontsize=16)
+fig.autofmt_xdate()
+ax.set_ylabel("Price USD", fontsize=10)
+ax.tick_params(axis='both', which='major', labelsize=10)
+plt.ylim(min(dis_df['adjusted_close']), max(dis_df['adjusted_close']))
+
+plt.show()
