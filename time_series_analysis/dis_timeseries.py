@@ -74,10 +74,9 @@ def evaluate_models(dataset, p_values, d_values, q_values):
                 print(model_fit.summary())
 
 # SPLIT THE DATA INTO TRAINING AND TEST SET
-total = len(dis_df)
-train_break = int(round(total * .75, 0))
-train = dis_df.iloc[:train_break,:]
-test = dis_df.iloc[train_break:,:]
+print(len(dis_df))
+train = dis_df.head(149)
+test = dis_df.tail(50)
 print(train.shape)
 print(test.shape)
 
@@ -86,24 +85,28 @@ p_values = [0, 1, 2, 4, 6, 8, 10]
 d_values = range(0, 3)
 q_values = range(0, 3)
 warnings.filterwarnings("ignore")
-# evaluate_models(train, p_values, d_values, q_values)
+evaluate_models(train, p_values, d_values, q_values)
 
 #1, 1, 0 HAS BEST AIC WITH 774.237
 # FIT THE MODEL
-model = ARIMA(dis_df, order=(1, 1, 0))
+model = ARIMA(train, order=(1, 1, 0))
 model_fit = model.fit()
 print(model_fit.summary())
 
 # CREATE THE TEST PREDICTIONS
-predictions = model_fit.predict(len(test))
-print(predictions.head(5))
-print(predictions.tail(5))
+print(test.head(5))
+print(test.tail(5))
+start_index = datetime(2021, 7, 7)
+end_index = datetime(2021, 9, 17)
+test['predictions'] = model_fit.predict(start=start_index, end=end_index)
+print(test.head(5))
+print(test.tail(5))
 
 # PLOT THE DATA
 plt.style.use('seaborn')
 fig, ax = plt.subplots()
 ax.plot(dis_dates, dis_df['adjusted_close'], c='red', alpha=0.6)
-ax.plot(dis_dates[50:], predictions, c='blue', alpha=0.6)
+ax.plot(dis_dates[149:], test['predictions'], c='blue', alpha=0.6)
 
 # FORMAT PLOT
 ax.set_title(f"Daily Adjusted Close Data \n(DIS)", fontsize=24)
