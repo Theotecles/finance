@@ -7,6 +7,8 @@ import numpy as np
 import warnings
 from math import sqrt
 from sklearn.metrics import mean_squared_error
+from finance import evaluate_models
+from finance import evaluate_models_rmse
 
 # CONNECT TO DATABASE
 conn = pyodbc.connect('Driver={SQL Server};'
@@ -38,9 +40,6 @@ for date in dis_df['data_date']:
 
 dis_df['data_date'] = dis_dates
 
-# CHECK DATA TYPES
-print(dis_df.dtypes)
-
 # PLOT THE DATA
 plt.style.use('seaborn')
 fig, ax = plt.subplots()
@@ -65,14 +64,6 @@ print(dis_df.index)
 print(dis_df.head())
 
 # EVALUATE COMBINATIONS OF P, D AND Q VALUES FOR AN ARIMA MODEL
-def evaluate_models(dataset, p_values, d_values, q_values):
-    for p in p_values:
-        for d in d_values:
-            for q in q_values:
-                model = ARIMA(dataset, order=(p, d, q))
-                model_fit = model.fit()
-                print(model_fit.summary())
-
 # SPLIT THE DATA INTO TRAINING AND TEST SET
 print(len(dis_df))
 train = dis_df.head(149)
@@ -89,20 +80,6 @@ evaluate_models(train, p_values, d_values, q_values)
 start_index = datetime(2021, 7, 7)
 end_index = datetime(2021, 9, 20)
 
-def evaluate_models_rmse(dataset, p_values, d_values, q_values, actuals, start_index, end_index):
-    """A FUNCTION THAT WILL EVALUATE THE DIFFERENT PARAMETERS BY ROOT MEAN SQUARED ERROR"""
-    for p in p_values:
-        for d in d_values:
-            for q in q_values:
-                model = ARIMA(dataset, order=(p, d, q))
-                model_fit = model.fit()
-                predictions = model_fit.predict(start=start_index, end=end_index)
-                error = actuals - predictions
-                mse = np.square(error).mean()
-                rmse = sqrt(mse)
-
-                print(f"RMSE for Model ({p}, {d}, {q}): {rmse}")
-
 evaluate_models_rmse(train, p_values, d_values, q_values, actuals=test['adjusted_close'], start_index=start_index, end_index=end_index)
 
 # 1, 1, 0 HAS BEST AIC WITH 774.237
@@ -114,10 +91,6 @@ print(model_fit.summary())
 
 # CREATE THE TEST PREDICTIONS
 test['predictions'] = model_fit.predict(start=start_index, end=end_index)
-test['error'] = test['adjusted_close'] - test['predictions']
-mse = np.square(test['error']).mean()
-rmse = sqrt(mse)
-print(rmse)
 
 # PLOT THE DATA
 plt.style.use('seaborn')
