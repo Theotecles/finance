@@ -105,28 +105,51 @@ def evaluate_models_rmse(dataset, p_values, d_values, q_values, actuals, start_i
 
 evaluate_models_rmse(train, p_values, d_values, q_values, actuals=test['adjusted_close'], start_index=start_index, end_index=end_index)
 
-#1, 1, 0 HAS BEST AIC WITH 774.237
+# 1, 1, 0 HAS BEST AIC WITH 774.237
+# 10, 0, 2 HAS BEST RMSE WITH 3.525
 # FIT THE MODEL
 model = ARIMA(train, order=(10, 0, 2))
 model_fit = model.fit()
 print(model_fit.summary())
 
 # CREATE THE TEST PREDICTIONS
-print(test.head(5))
-print(test.tail(5))
 test['predictions'] = model_fit.predict(start=start_index, end=end_index)
 test['error'] = test['adjusted_close'] - test['predictions']
 mse = np.square(test['error']).mean()
 rmse = sqrt(mse)
 print(rmse)
-print(test.head(5))
-print(test.tail(5))
 
 # PLOT THE DATA
 plt.style.use('seaborn')
 fig, ax = plt.subplots()
 ax.plot(dis_dates, dis_df['adjusted_close'], c='red', alpha=0.6)
 ax.plot(dis_dates[149:], test['predictions'], c='blue', alpha=0.6)
+
+# FORMAT PLOT
+ax.set_title(f"Daily Adjusted Close Data \n(DIS)", fontsize=24)
+ax.set_xlabel('', fontsize=16)
+fig.autofmt_xdate()
+ax.set_ylabel("Price USD", fontsize=10)
+ax.tick_params(axis='both', which='major', labelsize=10)
+plt.ylim(min(dis_df['adjusted_close']), max(dis_df['adjusted_close']))
+
+plt.show()
+
+# FIT AND PLOT FINAL MODEL
+model = ARIMA(dis_df, order=(10, 0, 2))
+model_fit = model.fit()
+print(model_fit.summary())
+start_index = datetime(2021, 9, 21)
+end_index = datetime(2022, 9, 21)
+projections = model_fit.predict(start=start_index, end=end_index)
+date_array = projections.index
+print(date_array)
+
+# PLOT THE DATA
+plt.style.use('seaborn')
+fig, ax = plt.subplots()
+ax.plot(dis_dates, dis_df['adjusted_close'], c='red', alpha=0.6)
+ax.plot(date_array, projections, c='blue', alpha=0.6)
 
 # FORMAT PLOT
 ax.set_title(f"Daily Adjusted Close Data \n(DIS)", fontsize=24)
