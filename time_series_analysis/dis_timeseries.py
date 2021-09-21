@@ -76,7 +76,7 @@ def evaluate_models(dataset, p_values, d_values, q_values):
 # SPLIT THE DATA INTO TRAINING AND TEST SET
 print(len(dis_df))
 train = dis_df.head(149)
-test = dis_df.tail(50)
+test = dis_df.tail(51)
 print(train.shape)
 print(test.shape)
 
@@ -86,19 +86,39 @@ d_values = range(0, 3)
 q_values = range(0, 3)
 warnings.filterwarnings("ignore")
 evaluate_models(train, p_values, d_values, q_values)
+start_index = datetime(2021, 7, 7)
+end_index = datetime(2021, 9, 20)
+
+def evaluate_models_rmse(dataset, p_values, d_values, q_values, actuals, start_index, end_index):
+    """A FUNCTION THAT WILL EVALUATE THE DIFFERENT PARAMETERS BY ROOT MEAN SQUARED ERROR"""
+    for p in p_values:
+        for d in d_values:
+            for q in q_values:
+                model = ARIMA(dataset, order=(p, d, q))
+                model_fit = model.fit()
+                predictions = model_fit.predict(start=start_index, end=end_index)
+                error = actuals - predictions
+                mse = np.square(error).mean()
+                rmse = sqrt(mse)
+
+                print(f"RMSE for Model ({p}, {d}, {q}): {rmse}")
+
+evaluate_models_rmse(train, p_values, d_values, q_values, actuals=test['adjusted_close'], start_index=start_index, end_index=end_index)
 
 #1, 1, 0 HAS BEST AIC WITH 774.237
 # FIT THE MODEL
-model = ARIMA(train, order=(1, 1, 0))
+model = ARIMA(train, order=(10, 0, 2))
 model_fit = model.fit()
 print(model_fit.summary())
 
 # CREATE THE TEST PREDICTIONS
 print(test.head(5))
 print(test.tail(5))
-start_index = datetime(2021, 7, 7)
-end_index = datetime(2021, 9, 17)
 test['predictions'] = model_fit.predict(start=start_index, end=end_index)
+test['error'] = test['adjusted_close'] - test['predictions']
+mse = np.square(test['error']).mean()
+rmse = sqrt(mse)
+print(rmse)
 print(test.head(5))
 print(test.tail(5))
 
